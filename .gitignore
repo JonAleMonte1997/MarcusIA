@@ -1,0 +1,22 @@
+node_modules/
+dist/
+coverage/
+
+# Baileys session (gitignored aunque todavía no exista el folder)
+auth_info_baileys/
+
+# Prisma / SQLite
+marcus.db
+marcus.db-journal
+*.db
+*.db-journal
+
+# Env
+.env
+.env.*.local
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+*.log
