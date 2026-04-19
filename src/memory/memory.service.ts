@@ -77,14 +77,14 @@ export class MemoryService implements OnModuleInit {
     return rows;
   }
 
-  async upsert(jid: string, key: string, value: string): Promise<void> {
+  async upsert(jid: string, key: string, value: string, skipCompact = false): Promise<void> {
     await this.prisma.memory.upsert({
       where: { jid_key: { jid, key } },
       update: { value },
       create: { jid, key, value },
     });
     this.logger.log(`Memory guardada (jid=${jid}, key=${key})`);
-    await this.compactIfNeeded(jid);
+    if (!skipCompact) await this.compactIfNeeded(jid);
   }
 
   async delete(jid: string, key: string): Promise<void> {
@@ -100,12 +100,13 @@ export class MemoryService implements OnModuleInit {
     try {
       const facts = await this.claude.extractFacts(messages);
       for (const f of facts) {
-        await this.upsert(jid, f.key, f.value);
+        await this.upsert(jid, f.key, f.value, true);
       }
       if (facts.length > 0) {
         this.logger.log(
           `Extracción de sesión ${sessionId}: ${facts.length} fact(s) guardados`,
         );
+        await this.compactIfNeeded(jid);
       }
     } catch (err) {
       this.logger.warn(

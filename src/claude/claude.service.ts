@@ -149,6 +149,7 @@ export class ClaudeService {
     const response = await this.client.messages.create({
       model: this.model,
       max_tokens: 512,
+      system: 'Respondé SOLO con JSON válido, sin texto adicional ni explicaciones.',
       messages: [
         {
           role: 'user',
@@ -180,6 +181,7 @@ ${transcript}`,
     const response = await this.client.messages.create({
       model: this.model,
       max_tokens: 512,
+      system: 'Respondé SOLO con JSON válido, sin texto adicional ni explicaciones.',
       messages: [
         {
           role: 'user',
