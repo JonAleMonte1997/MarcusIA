@@ -69,74 +69,68 @@ export class ClaudeService {
 
     const tools = this.toolRegistry.getDefinitions();
     const systemPrompt = buildSystemPrompt(memories);
+    const MAX_ROUNDS = 5;
 
     this.logger.log(
       `Claude llamado (model=${this.model}, msgs=${messages.length}, tools=${tools.length}, memories=${memories.length})`,
     );
 
-    const response = await this.client.messages.create({
-      model: this.model,
-      max_tokens: this.maxTokens,
-      system: systemPrompt,
-      messages,
-      ...(tools.length > 0 ? { tools } : {}),
-    });
+    let currentMessages = messages;
 
-    if (response.stop_reason !== 'tool_use') {
-      const block = response.content[0];
-      if (block.type !== 'text') {
-        throw new Error(`Bloque inesperado de Claude: ${block.type}`);
-      }
-      return block.text;
-    }
+    for (let round = 0; round < MAX_ROUNDS; round++) {
+      const response = await this.client.messages.create({
+        model: this.model,
+        max_tokens: this.maxTokens,
+        system: systemPrompt,
+        messages: currentMessages,
+        ...(tools.length > 0 ? { tools } : {}),
+      });
 
-    const toolUseBlocks = response.content.filter(
-      (b): b is ToolUseBlock => b.type === 'tool_use',
-    );
-
-    const toolResults: ToolResultBlockParam[] = await Promise.all(
-      toolUseBlocks.map(async (block) => {
-        let result: unknown;
-        try {
-          result = await this.toolRegistry.execute(
-            block.name,
-            block.input as Record<string, unknown>,
-            jid,
-          );
-          this.logger.log(`Tool ejecutada: ${block.name} → ok`);
-        } catch (err) {
-          const msg = (err as Error).message;
-          this.logger.warn(`Tool ${block.name} falló: ${msg}`);
-          result = { error: msg };
+      if (response.stop_reason !== 'tool_use') {
+        const block = response.content.find((b) => b.type === 'text');
+        if (!block || block.type !== 'text') {
+          this.logger.warn(`Claude no devolvió texto en ronda ${round + 1}`);
+          return 'Listo.';
         }
-        return {
-          type: 'tool_result' as const,
-          tool_use_id: block.id,
-          content: JSON.stringify(result),
-        };
-      }),
-    );
+        return block.text;
+      }
 
-    const messagesWithResults: MessageParam[] = [
-      ...messages,
-      { role: 'assistant', content: response.content },
-      { role: 'user', content: toolResults },
-    ];
+      const toolUseBlocks = response.content.filter(
+        (b): b is ToolUseBlock => b.type === 'tool_use',
+      );
 
-    const finalResponse = await this.client.messages.create({
-      model: this.model,
-      max_tokens: this.maxTokens,
-      system: systemPrompt,
-      messages: messagesWithResults,
-      ...(tools.length > 0 ? { tools } : {}),
-    });
+      const toolResults: ToolResultBlockParam[] = await Promise.all(
+        toolUseBlocks.map(async (block) => {
+          let result: unknown;
+          try {
+            result = await this.toolRegistry.execute(
+              block.name,
+              block.input as Record<string, unknown>,
+              jid,
+            );
+            this.logger.log(`Tool ejecutada: ${block.name} → ok`);
+          } catch (err) {
+            const msg = (err as Error).message;
+            this.logger.warn(`Tool ${block.name} falló: ${msg}`);
+            result = { error: msg };
+          }
+          return {
+            type: 'tool_result' as const,
+            tool_use_id: block.id,
+            content: JSON.stringify(result),
+          };
+        }),
+      );
 
-    const textBlock = finalResponse.content.find((b) => b.type === 'text');
-    if (!textBlock || textBlock.type !== 'text') {
-      this.logger.warn('Claude no devolvió texto en la segunda llamada');
-      return 'Listo.';
+      currentMessages = [
+        ...currentMessages,
+        { role: 'assistant', content: response.content },
+        { role: 'user', content: toolResults },
+      ];
     }
-    return textBlock.text;
+
+    this.logger.warn(`Loop agentic alcanzó el límite de ${MAX_ROUNDS} rondas`);
+    return 'Listo.';
   }
 
   async extractFacts(
