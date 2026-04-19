@@ -166,13 +166,16 @@ export class WhatsappService implements OnModuleInit, OnApplicationShutdown {
     if (!text) return;
 
     try {
+      await sock.sendPresenceUpdate('composing', jid);
       const reply = await this.handler({ text, jid });
+      await sock.sendPresenceUpdate('paused', jid);
       if (reply) {
         const sent = await sock.sendMessage(jid, { text: reply });
         const sentId = sent?.key?.id;
         if (sentId) this.rememberSentId(sentId);
       }
     } catch (err) {
+      await sock.sendPresenceUpdate('paused', jid).catch(() => undefined);
       const error = err as Error;
       this.logger.error(
         `Handler falló para "${text}": ${error.message}`,
