@@ -54,6 +54,53 @@ export class GoogleCalendarService implements OnModuleInit {
   }
 
   private registerTools(): void {
-    // tools se registran en los tasks siguientes
+    this.registry.register({
+      definition: {
+        name: 'list_calendar_events',
+        description:
+          'Lista los próximos eventos del calendario de Google del usuario.',
+        input_schema: {
+          type: 'object',
+          properties: {
+            time_min: {
+              type: 'string',
+              description: 'Inicio del rango en ISO8601 (default: ahora)',
+            },
+            time_max: {
+              type: 'string',
+              description: 'Fin del rango en ISO8601 (default: ahora + 7 días)',
+            },
+          },
+        },
+      },
+      handler: (input) => this.listEvents(input),
+    });
+  }
+
+  async listEvents(input: Record<string, unknown>): Promise<unknown> {
+    if (!this.calendar) return { error: 'Google Calendar no está inicializado.' };
+    const now = new Date();
+    const timeMin =
+      (input.time_min as string | undefined) ?? now.toISOString();
+    const timeMax =
+      (input.time_max as string | undefined) ??
+      new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+    const res = await this.calendar.events.list({
+      calendarId: this.calendarId(),
+      timeMin,
+      timeMax,
+      singleEvents: true,
+      orderBy: 'startTime',
+    });
+
+    return (res.data.items ?? []).map((e) => ({
+      id: e.id,
+      summary: e.summary ?? '(sin título)',
+      start: e.start?.dateTime ?? e.start?.date ?? null,
+      end: e.end?.dateTime ?? e.end?.date ?? null,
+      location: e.location ?? null,
+      description: e.description ?? null,
+    }));
   }
 }
