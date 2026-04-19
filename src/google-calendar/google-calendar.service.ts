@@ -105,6 +105,58 @@ export class GoogleCalendarService implements OnModuleInit {
       },
       handler: (input) => this.createEvent(input),
     });
+    this.registry.register({
+      definition: {
+        name: 'update_calendar_event',
+        description: 'Actualiza un evento existente en el calendario de Google.',
+        input_schema: {
+          type: 'object',
+          properties: {
+            event_id: {
+              type: 'string',
+              description: 'ID del evento a actualizar (obtenido de list_calendar_events)',
+            },
+            summary: { type: 'string', description: 'Nuevo título (opcional)' },
+            start: {
+              type: 'string',
+              description: 'Nuevo inicio en ISO8601 con timezone (opcional)',
+            },
+            end: {
+              type: 'string',
+              description: 'Nuevo fin en ISO8601 con timezone (opcional)',
+            },
+            description: {
+              type: 'string',
+              description: 'Nueva descripción (opcional)',
+            },
+            location: {
+              type: 'string',
+              description: 'Nueva ubicación (opcional)',
+            },
+          },
+          required: ['event_id'],
+        },
+      },
+      handler: (input) => this.updateEvent(input),
+    });
+
+    this.registry.register({
+      definition: {
+        name: 'delete_calendar_event',
+        description: 'Elimina un evento del calendario de Google.',
+        input_schema: {
+          type: 'object',
+          properties: {
+            event_id: {
+              type: 'string',
+              description: 'ID del evento a eliminar (obtenido de list_calendar_events)',
+            },
+          },
+          required: ['event_id'],
+        },
+      },
+      handler: (input) => this.deleteEvent(input),
+    });
   }
 
   async listEvents(input: Record<string, unknown>): Promise<unknown> {
@@ -155,5 +207,43 @@ export class GoogleCalendarService implements OnModuleInit {
       start: res.data.start?.dateTime ?? res.data.start?.date ?? null,
       end: res.data.end?.dateTime ?? res.data.end?.date ?? null,
     };
+  }
+
+  async updateEvent(input: Record<string, unknown>): Promise<unknown> {
+    if (!this.calendar) return { error: 'Google Calendar no está inicializado.' };
+    const eventId = input.event_id as string;
+    try {
+      const patch: calendar_v3.Schema$Event = {};
+      if (input.summary) patch.summary = input.summary as string;
+      if (input.start) patch.start = { dateTime: input.start as string };
+      if (input.end) patch.end = { dateTime: input.end as string };
+      if (input.description !== undefined)
+        patch.description = input.description as string;
+      if (input.location !== undefined)
+        patch.location = input.location as string;
+
+      await this.calendar.events.patch({
+        calendarId: this.calendarId(),
+        eventId,
+        requestBody: patch,
+      });
+      return { ok: true, id: eventId };
+    } catch {
+      return { error: `Evento ${eventId} no encontrado o no se pudo actualizar.` };
+    }
+  }
+
+  async deleteEvent(input: Record<string, unknown>): Promise<unknown> {
+    if (!this.calendar) return { error: 'Google Calendar no está inicializado.' };
+    const eventId = input.event_id as string;
+    try {
+      await this.calendar.events.delete({
+        calendarId: this.calendarId(),
+        eventId,
+      });
+      return { ok: true };
+    } catch {
+      return { error: `No se pudo eliminar el evento ${eventId}.` };
+    }
   }
 }
