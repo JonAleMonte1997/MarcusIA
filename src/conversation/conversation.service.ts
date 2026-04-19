@@ -22,12 +22,12 @@ export class ConversationService {
   ): Promise<MessageParam[]> {
     const rows = await this.prisma.message.findMany({
       where: { jid },
-      orderBy: { createdAt: 'asc' },
+      orderBy: { createdAt: 'desc' },
       take: limit,
       select: { role: true, content: true },
     });
 
-    return rows.map((r) => ({
+    return rows.reverse().map((r) => ({
       role: r.role as 'user' | 'assistant',
       content: r.content,
     }));

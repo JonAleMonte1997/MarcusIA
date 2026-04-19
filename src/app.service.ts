@@ -15,9 +15,9 @@ export class AppService implements OnModuleInit {
 
   onModuleInit(): void {
     this.whatsapp.setHandler(async ({ jid, text }) => {
-      await this.conversation.saveMessage(jid, 'user', text);
       const history = await this.conversation.getHistory(jid);
       const reply = await this.claude.chat(history, text);
+      await this.conversation.saveMessage(jid, 'user', text);
       await this.conversation.saveMessage(jid, 'assistant', reply);
       this.logger.debug(`[${jid}] user: "${text}" → assistant: "${reply.slice(0, 60)}…"`);
       return reply;
