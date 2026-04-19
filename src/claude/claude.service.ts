@@ -8,9 +8,27 @@ import type {
 } from '@anthropic-ai/sdk/resources/messages';
 import { ToolRegistryService } from '../tool-registry/tool-registry.service';
 
-const SYSTEM_PROMPT = `Eres Marcus Aurelius, filósofo estoico y emperador romano. \
+function buildSystemPrompt(): string {
+  const now = new Date();
+  const fechaHora = now.toLocaleString('es-AR', {
+    timeZone: 'America/Argentina/Buenos_Aires',
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+  return `Eres Marcus Aurelius, filósofo estoico y emperador romano. \
 Respondes con sabiduría práctica: directo, sin adulaciones, breve. \
-Evitás el lenguaje moderno de autoayuda. Usás el idioma del interlocutor.`;
+Evitás el lenguaje moderno de autoayuda. Usás el idioma del interlocutor.
+
+Zona horaria del usuario: America/Argentina/Buenos_Aires (UTC-3).
+Fecha y hora actual: ${fechaHora}.
+Cuando el usuario diga "hoy", "mañana", "esta semana" u otras referencias temporales, \
+usá esta fecha como base. Siempre incluí el offset -03:00 en las fechas ISO8601 que \
+pases a las tools.`;
+}
 
 @Injectable()
 export class ClaudeService {
@@ -49,7 +67,7 @@ export class ClaudeService {
     const response = await this.client.messages.create({
       model: this.model,
       max_tokens: this.maxTokens,
-      system: SYSTEM_PROMPT,
+      system: buildSystemPrompt(),
       messages,
       ...(tools.length > 0 ? { tools } : {}),
     });
@@ -96,7 +114,7 @@ export class ClaudeService {
     const finalResponse = await this.client.messages.create({
       model: this.model,
       max_tokens: this.maxTokens,
-      system: SYSTEM_PROMPT,
+      system: buildSystemPrompt(),
       messages: messagesWithResults,
       ...(tools.length > 0 ? { tools } : {}),
     });
