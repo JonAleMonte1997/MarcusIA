@@ -1,0 +1,17 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Message {
+  id        Int      @id @default(autoincrement())
+  jid       String
+  role      String
+  content   String
+  createdAt DateTime @default(now())
+
+  @@index([jid, createdAt])
+}
