@@ -20,3 +20,6 @@ marcus.db-journal
 .idea/
 .vscode/
 *.log
+
+# Google OAuth tokens
+tokens.google.json
