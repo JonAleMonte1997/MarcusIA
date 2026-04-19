@@ -7,14 +7,40 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Session {
+  id             String    @id @default(cuid())
+  jid            String
+  createdAt      DateTime  @default(now())
+  lastActivityAt DateTime  @default(now())
+  closedAt       DateTime?
+  messages       Message[]
+
+  @@index([jid, closedAt])
+}
+
 model Message {
   id        Int      @id @default(autoincrement())
+  sessionId String?
+  session   Session? @relation(fields: [sessionId], references: [id])
   jid       String
   role      String
   content   String
   createdAt DateTime @default(now())
 
+  @@index([sessionId, createdAt])
   @@index([jid, createdAt])
+}
+
+model Memory {
+  id        String   @id @default(cuid())
+  jid       String
+  key       String
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([jid, key])
+  @@index([jid, updatedAt])
 }
 
 model Task {
