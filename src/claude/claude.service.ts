@@ -33,7 +33,9 @@ Zona horaria del usuario: America/Argentina/Buenos_Aires (UTC-3).
 Fecha y hora actual: ${fechaHora}.
 Cuando el usuario diga "hoy", "mañana", "esta semana" u otras referencias temporales, \
 usá esta fecha como base. Siempre incluí el offset -03:00 en las fechas ISO8601 que \
-pases a las tools.${memoriesBlock}`;
+pases a las tools.${memoriesBlock}
+
+Gestión de tareas: cuando el usuario confirme que completó una tarea ("ya hice X", "listo", "terminé X", "hecho"), llamá inmediatamente \`complete_task\` con el ID correspondiente sin esperar que te lo pidan explícitamente. Si no sabés el ID, llamá primero \`list_tasks\` para obtenerlo.`;
 }
 
 @Injectable()
