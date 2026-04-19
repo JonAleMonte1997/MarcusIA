@@ -16,3 +16,14 @@ model Message {
 
   @@index([jid, createdAt])
 }
+
+model Task {
+  id        Int       @id @default(autoincrement())
+  jid       String
+  title     String
+  dueAt     DateTime?
+  done      Boolean   @default(false)
+  createdAt DateTime  @default(now())
+
+  @@index([jid])
+}
