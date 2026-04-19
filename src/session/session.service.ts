@@ -1,6 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { Cron } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
+import { MemoryService } from '../memory/memory.service';
+import { ConversationService } from '../conversation/conversation.service';
 import type { Session } from '@prisma/client';
 
 @Injectable()
@@ -11,6 +14,8 @@ export class SessionService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
+    private readonly memory: MemoryService,
+    private readonly conversation: ConversationService,
   ) {
     this.timeoutHours = this.config.get<number>('SESSION_TIMEOUT_HOURS', 6);
   }
@@ -24,7 +29,7 @@ export class SessionService {
     if (open) {
       const cutoff = new Date(Date.now() - this.timeoutHours * 3_600_000);
       if (open.lastActivityAt < cutoff) {
-        await this.closeSession(open.id, 'timeout');
+        await this.closeAndExtract(open, 'timeout');
         return this.createSession(jid);
       }
       return open;
@@ -40,20 +45,31 @@ export class SessionService {
     });
   }
 
-  async closeSession(sessionId: string, reason: string): Promise<void> {
-    await this.prisma.session.update({
-      where: { id: sessionId },
-      data: { closedAt: new Date() },
+  @Cron('0 * * * *')
+  async expireStale(): Promise<void> {
+    const cutoff = new Date(Date.now() - this.timeoutHours * 3_600_000);
+    const stale = await this.prisma.session.findMany({
+      where: { closedAt: null, lastActivityAt: { lt: cutoff } },
     });
-    this.logger.log(`Sesión cerrada (id=${sessionId}, motivo=${reason})`);
+
+    for (const session of stale) {
+      await this.closeAndExtract(session, 'cron');
+    }
+
+    if (stale.length > 0) {
+      this.logger.log(`Cron: ${stale.length} sesión(es) expirada(s)`);
+    }
   }
 
-  async getSessionMessages(sessionId: string): Promise<{ role: string; content: string }[]> {
-    return this.prisma.message.findMany({
-      where: { sessionId },
-      orderBy: { createdAt: 'asc' },
-      select: { role: true, content: true },
+  private async closeAndExtract(session: Session, reason: string): Promise<void> {
+    await this.prisma.session.update({
+      where: { id: session.id },
+      data: { closedAt: new Date() },
     });
+    this.logger.log(`Sesión cerrada (id=${session.id}, jid=${session.jid}, motivo=${reason})`);
+
+    const messages = await this.conversation.getSessionMessages(session.id);
+    void this.memory.extractAndSave(session.id, session.jid, messages);
   }
 
   private async createSession(jid: string): Promise<Session> {
