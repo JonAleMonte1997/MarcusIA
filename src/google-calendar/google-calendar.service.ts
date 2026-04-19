@@ -75,6 +75,36 @@ export class GoogleCalendarService implements OnModuleInit {
       },
       handler: (input) => this.listEvents(input),
     });
+    this.registry.register({
+      definition: {
+        name: 'create_calendar_event',
+        description: 'Crea un evento en el calendario de Google del usuario.',
+        input_schema: {
+          type: 'object',
+          properties: {
+            summary: { type: 'string', description: 'Título del evento' },
+            start: {
+              type: 'string',
+              description: 'Inicio del evento en ISO8601 con timezone (ej: 2026-04-20T10:00:00-03:00)',
+            },
+            end: {
+              type: 'string',
+              description: 'Fin del evento en ISO8601 con timezone',
+            },
+            description: {
+              type: 'string',
+              description: 'Descripción del evento (opcional)',
+            },
+            location: {
+              type: 'string',
+              description: 'Ubicación del evento (opcional)',
+            },
+          },
+          required: ['summary', 'start', 'end'],
+        },
+      },
+      handler: (input) => this.createEvent(input),
+    });
   }
 
   async listEvents(input: Record<string, unknown>): Promise<unknown> {
@@ -102,5 +132,28 @@ export class GoogleCalendarService implements OnModuleInit {
       location: e.location ?? null,
       description: e.description ?? null,
     }));
+  }
+
+  async createEvent(input: Record<string, unknown>): Promise<unknown> {
+    if (!this.calendar) return { error: 'Google Calendar no está inicializado.' };
+    const res = await this.calendar.events.insert({
+      calendarId: this.calendarId(),
+      requestBody: {
+        summary: input.summary as string,
+        start: { dateTime: input.start as string },
+        end: { dateTime: input.end as string },
+        ...(input.description
+          ? { description: input.description as string }
+          : {}),
+        ...(input.location ? { location: input.location as string } : {}),
+      },
+    });
+
+    return {
+      id: res.data.id,
+      summary: res.data.summary,
+      start: res.data.start?.dateTime ?? res.data.start?.date ?? null,
+      end: res.data.end?.dateTime ?? res.data.end?.date ?? null,
+    };
   }
 }
