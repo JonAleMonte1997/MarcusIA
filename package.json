@@ -19,12 +19,15 @@
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.4",
     "@nestjs/core": "^11.0.1",
-    "@prisma/client": "^7.7.0",
+    "@prisma/client": "^5.22.0",
     "@whiskeysockets/baileys": "7.0.0-rc.9",
     "pino": "^10.3.1",
     "qrcode-terminal": "^0.12.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["@prisma/client", "@prisma/engines", "prisma"]
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
@@ -38,7 +41,7 @@
     "eslint-plugin-prettier": "^5.2.2",
     "globals": "^16.0.0",
     "prettier": "^3.4.2",
-    "prisma": "^7.7.0",
+    "prisma": "^5.22.0",
     "source-map-support": "^0.5.21",
     "ts-loader": "^9.5.2",
     "ts-node": "^10.9.2",
