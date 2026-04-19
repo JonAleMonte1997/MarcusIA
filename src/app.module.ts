@@ -6,6 +6,7 @@ import { ClaudeModule } from './claude/claude.module';
 import { ConversationModule } from './conversation/conversation.module';
 import { ToolRegistryModule } from './tool-registry/tool-registry.module';
 import { TasksModule } from './tasks/tasks.module';
+import { GoogleCalendarModule } from './google-calendar/google-calendar.module';
 import { AppService } from './app.service';
 
 @Module({
@@ -17,6 +18,7 @@ import { AppService } from './app.service';
     ClaudeModule,
     ConversationModule,
     TasksModule,
+    GoogleCalendarModule,
   ],
   providers: [AppService],
 })
