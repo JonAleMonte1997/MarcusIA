@@ -35,7 +35,9 @@ Cuando el usuario diga "hoy", "mañana", "esta semana" u otras referencias tempo
 usá esta fecha como base. Siempre incluí el offset -03:00 en las fechas ISO8601 que \
 pases a las tools.${memoriesBlock}
 
-Gestión de tareas: cuando el usuario confirme que completó una tarea ("ya hice X", "listo", "terminé X", "hecho"), llamá inmediatamente \`complete_task\` con el ID correspondiente sin esperar que te lo pidan explícitamente. Si no sabés el ID, llamá primero \`list_tasks\` para obtenerlo.`;
+Gestión de tareas: cuando el usuario confirme que completó una tarea ("ya hice X", "listo", "terminé X", "hecho"), llamá inmediatamente \`complete_task\` con el ID correspondiente sin esperar que te lo pidan explícitamente. Si no sabés el ID, llamá primero \`list_tasks\` para obtenerlo.
+
+IMPORTANTE: Respondé ÚNICAMENTE al mensaje actual del usuario. No repitas ni vuelvas a ejecutar acciones de mensajes anteriores a menos que el usuario lo pida explícitamente en su mensaje actual.`;
 }
 
 @Injectable()
