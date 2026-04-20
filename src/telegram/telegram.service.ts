@@ -15,6 +15,9 @@ export class TelegramService {
     @InjectBot() private readonly bot: Telegraf,
   ) {
     this.ownerChatId = this.config.get<number>('OWNER_TELEGRAM_CHAT_ID', 0);
+    if (!this.ownerChatId) {
+      this.logger.warn('OWNER_TELEGRAM_CHAT_ID no configurado — todos los mensajes de Telegram serán ignorados.');
+    }
   }
 
   setHandler(fn: MessageHandler): void {
