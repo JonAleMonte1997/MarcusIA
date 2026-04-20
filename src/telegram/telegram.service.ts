@@ -30,8 +30,8 @@ export class TelegramService {
       return;
     }
 
+    const stopTyping = this.keepTyping(chatId);
     try {
-      await this.bot.telegram.sendChatAction(chatId, 'typing');
       const reply = await this.handler({ text, jid: String(chatId) });
       if (reply) {
         await this.bot.telegram.sendMessage(chatId, reply);
@@ -42,6 +42,19 @@ export class TelegramService {
       await this.bot.telegram
         .sendMessage(chatId, '⚠️ Marcus tuvo un error procesando tu mensaje.')
         .catch(() => undefined);
+    } finally {
+      stopTyping();
     }
+  }
+
+  private keepTyping(chatId: number): () => void {
+    let active = true;
+    const send = () => {
+      if (!active) return;
+      this.bot.telegram.sendChatAction(chatId, 'typing').catch(() => undefined);
+      if (active) setTimeout(send, 4500);
+    };
+    send();
+    return () => { active = false; };
   }
 }
