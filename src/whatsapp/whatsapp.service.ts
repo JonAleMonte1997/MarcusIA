@@ -16,11 +16,7 @@ import makeWASocket, {
 import { Boom } from '@hapi/boom';
 import qrcode from 'qrcode-terminal';
 import pino from 'pino';
-
-export type InboundMessage = { text: string; jid: string };
-export type MessageHandler = (
-  msg: InboundMessage,
-) => Promise<string | null> | string | null;
+import type { InboundMessage, MessageHandler } from '../messaging.types';
 
 const AUTH_DIR = 'auth_info_baileys';
 const RECONNECT_DELAY_MS = 3000;
