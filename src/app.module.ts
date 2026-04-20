@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { PrismaModule } from './prisma/prisma.module';
 import { WhatsappModule } from './whatsapp/whatsapp.module';
+import { TelegramModule } from './telegram/telegram.module';
 import { ClaudeModule } from './claude/claude.module';
 import { ConversationModule } from './conversation/conversation.module';
 import { ToolRegistryModule } from './tool-registry/tool-registry.module';
@@ -19,6 +20,7 @@ import { AppService } from './app.service';
     PrismaModule,
     ToolRegistryModule,
     WhatsappModule,
+    TelegramModule,
     ClaudeModule,
     ConversationModule,
     TasksModule,
