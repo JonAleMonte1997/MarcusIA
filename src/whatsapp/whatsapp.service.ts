@@ -41,6 +41,10 @@ export class WhatsappService implements OnModuleInit, OnApplicationShutdown {
   }
 
   async onModuleInit(): Promise<void> {
+    if (this.config.get<string>('WHATSAPP_ENABLED', 'true') === 'false') {
+      this.logger.warn('WhatsApp deshabilitado (WHATSAPP_ENABLED=false).');
+      return;
+    }
     this.logger.log(
       this.configuredOwnerJid
         ? `Owner JID del .env: ${this.configuredOwnerJid}`
